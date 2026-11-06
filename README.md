@@ -54,7 +54,7 @@ Puedes ejecutar este proyecto de dos formas sencillas:
 3. Haz doble clic sobre `index.html` o ábrelo directamente con cualquier navegador web moderno (Google Chrome, Firefox, Edge, Safari). No requiere instalación de servidores ni dependencias adicionales.
 
 ### Opción B: Visualización Online (GitHub Pages)
-1. Accede a la URL pública desplegada en GitHub Pages: Enlace de la web
+1. Accede a la URL pública desplegada en GitHub Pages: [Enlace de la web](https://alexander-426.github.io/Desafio-EDO---M-todos-Num-ricos-I/)
 2. Modifica los parámetros iniciales directamente en los campos de entrada y haz clic en **"Calcular y Simular"** para actualizar la gráfica y la tabla de errores de forma dinámica.
 
 ---
