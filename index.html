@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador BioAgro EDO • Métodos Numéricos</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- KaTeX para renderizado matemático elegante -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                            950: '#022c22'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .katex-display { margin: 0.5em 0 !important; }
+        .tab-animation { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-gradient-to-r from-brand-950 via-brand-900 to-emerald-900 text-white shadow-xl sticky top-0 z-50 border-b border-brand-800/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo & Title -->
+                <div class="flex items-center space-x-3.5">
+                    <div class="p-3 bg-emerald-500/20 backdrop-blur-md rounded-2xl border border-emerald-400/30 text-emerald-300 shadow-inner">
+                        <i class="fa-solid fa-leaf text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[11px] font-extrabold uppercase tracking-widest text-emerald-300 bg-emerald-900/80 px-2 py-0.5 rounded-md border border-emerald-700/50">Métodos Numéricos</span>
+                            <span class="text-[11px] font-semibold text-slate-300">EDO 1.° Orden</span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">BioAgro <span class="text-emerald-400 font-light">Simulador</span></h1>
+                    </div>
+                </div>
+
+                <!-- Desktop Tabs Buttons -->
+                <nav class="hidden md:flex items-center space-x-1.5 bg-brand-950/60 p-1.5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                    <button onclick="switchTab('contexto')" id="tab-btn-contexto" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm tab-animation text-slate-300 hover:text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Contexto & Modelo</span>
+                    </button>
+                    <button onclick="switchTab('simulador')" id="tab-btn-simulador" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm tab-animation text-slate-300 hover:text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Simulador & Gráfica</span>
+                    </button>
+                    <button onclick="switchTab('paso-a-paso')" id="tab-btn-paso-a-paso" class="tab-btn px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm tab-animation text-slate-300 hover:text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-calculator"></i>
+                        <span>Desglose (Fórmulas)</span>
+                    </button>
+                    <button onclick="toggleVideoGuideModal()" class="px-3.5 py-2.5 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 transition-all flex items-center space-x-1.5 shadow-md shadow-amber-500/20">
+                        <i class="fa-solid fa-video"></i>
+                        <span>Video (1 min)</span>
+                    </button>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button onclick="toggleMobileMenu()" class="p-2.5 rounded-xl bg-brand-900 border border-emerald-700/50 text-white focus:outline-none">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-brand-950 border-t border-brand-800/60 px-4 pt-3 pb-5 space-y-2">
+            <button onclick="switchTab('contexto'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-xl text-slate-200 hover:bg-brand-900 font-semibold text-sm flex items-center space-x-3">
+                <i class="fa-solid fa-book-open text-emerald-400"></i>
+                <span>Contexto & Modelo</span>
+            </button>
+            <button onclick="switchTab('simulador'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-xl text-slate-200 hover:bg-brand-900 font-semibold text-sm flex items-center space-x-3">
+                <i class="fa-solid fa-chart-line text-emerald-400"></i>
+                <span>Simulador & Gráfica</span>
+            </button>
+            <button onclick="switchTab('paso-a-paso'); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-xl text-slate-200 hover:bg-brand-900 font-semibold text-sm flex items-center space-x-3">
+                <i class="fa-solid fa-calculator text-emerald-400"></i>
+                <span>Desglose (Fórmulas)</span>
+            </button>
+            <button onclick="toggleVideoGuideModal(); toggleMobileMenu()" class="w-full text-left px-4 py-3 rounded-xl bg-amber-500 text-slate-950 font-bold text-sm flex items-center space-x-3">
+                <i class="fa-solid fa-video"></i>
+                <span>Guion para Video (1 min)</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ==================== TAB 1: CONTEXTO & MODELO ==================== -->
+        <section id="tab-contexto" class="tab-content space-y-8">
+            
+            <!-- Hero Title Banner -->
+            <div class="relative bg-gradient-to-br from-white via-slate-50 to-emerald-50/50 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-64 h-64 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="relative z-10 space-y-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <i class="fa-solid fa-seedling mr-1.5 text-emerald-600"></i> Desafío Individual de Métodos Numéricos
+                        </span>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            <i class="fa-regular fa-calendar-check mr-1.5 text-slate-500"></i> Entrega: 6 de Noviembre de 2026
+                        </span>
+                    </div>
+
+                    <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                        Modelo de Crecimiento y Producción de Biomasa vegetal en un Huerto Urbano Comunitario
+                    </h2>
+                    
+                    <p class="text-sm sm:text-base text-slate-600 leading-relaxed max-w-4xl">
+                        Simulación computacional de una EDO de primer orden con condición inicial mediante los métodos de 
+                        <strong class="text-slate-800">Heun (Runge-Kutta de orden 2)</strong> y <strong class="text-slate-800">Runge-Kutta de orden 4 (RK4)</strong> 
+                        para planificar cosechas sustentables y evaluar la precisión numérica.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Problem Statement & Beneficiary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Beneficiary Community -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 hover:shadow-md transition-shadow space-y-3">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center text-xl shadow-inner">
+                        <i class="fa-solid fa-people-roof"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Comunidad Beneficiaria y Relevancia</h3>
+                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        Vecinos del barrio organizados en un <strong>huerto urbano sustentable</strong> que abastece directamente al 
+                        comedor comunitario local. Permite asegurar entregas de alimento vegetal de forma planificada y prevenir la escasez o el desperdicio.
+                    </p>
+                </div>
+
+                <!-- Specific Problem -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/90 hover:shadow-md transition-shadow space-y-3">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center text-xl shadow-inner">
+                        <i class="fa-solid fa-circle-question"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Problema Específico a Resolver</h3>
+                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        ¿Cuánta biomasa vegetal comestible (en kilogramos) estará lista para cosecha en el instante de tiempo <span class="font-mono text-slate-800 font-semibold">t</span> y qué tan precisas son las aproximaciones de Heun y RK4 comparadas con la solución analítica exacta?
+                    </p>
+                </div>
+            </div>
+
+            <!-- Math Model Formulation & Variables -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/90 space-y-8">
+                <div class="border-b border-slate-100 pb-4">
+                    <h3 class="text-xl font-bold text-slate-900 flex items-center space-x-2.5">
+                        <i class="fa-solid fa-square-root-variable text-emerald-600"></i>
+                        <span>Variables y Parámetros del Modelo</span>
+                    </h3>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">Definición de las magnitudes físicas y biológicas que rigen la ecuación diferencial del huerto.</p>
+                </div>
+
+                <!-- Variables Display Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                        <div class="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Variable Independiente</div>
+                        <div class="text-xl font-bold text-slate-900 mt-1 font-mono">t</div>
+                        <div class="text-xs text-slate-600 mt-0.5">Tiempo transcurrido</div>
+                        <div class="mt-2 text-[11px] font-mono bg-emerald-100/60 text-emerald-900 px-2 py-0.5 rounded border border-emerald-200 inline-block">Unidad: Semanas</div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                        <div class="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Variable Dependiente</div>
+                        <div class="text-xl font-bold text-slate-900 mt-1 font-mono">y(t)</div>
+                        <div class="text-xs text-slate-600 mt-0.5">Biomasa comestible lista</div>
+                        <div class="mt-2 text-[11px] font-mono bg-emerald-100/60 text-emerald-900 px-2 py-0.5 rounded border border-emerald-200 inline-block">Unidad: Kilogramos (kg)</div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                        <div class="text-[11px] font-extrabold text-blue-700 uppercase tracking-wider">Tasa Intrínseca (r)</div>
+                        <div class="text-xl font-bold text-slate-900 mt-1 font-mono">r = 0.40</div>
+                        <div class="text-xs text-slate-600 mt-0.5">Velocidad de crecimiento</div>
+                        <div class="mt-2 text-[11px] font-mono bg-blue-100/60 text-blue-900 px-2 py-0.5 rounded border border-blue-200 inline-block">Unidad: semana⁻¹</div>
+                    </div>
+
+                    <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+                        <div class="text-[11px] font-extrabold text-purple-700 uppercase tracking-wider">Capacidad de Carga (K)</div>
+                        <div class="text-xl font-bold text-slate-900 mt-1 font-mono">K = 50.0</div>
+                        <div class="text-xs text-slate-600 mt-0.5">Biomasa máxima del espacio</div>
+                        <div class="mt-2 text-[11px] font-mono bg-purple-100/60 text-purple-900 px-2 py-0.5 rounded border border-purple-200 inline-block">Unidad: Kilogramos (kg)</div>
+                    </div>
+                </div>
+
+                <!-- Rendered Mathematical Equations Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- EDO Box -->
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-md border border-slate-700 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Ecuación Diferencial Logística</span>
+                            <span class="text-[11px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/30">EDO 1.° Orden</span>
+                        </div>
+                        <div id="katex-edo-main" class="py-3 text-center"></div>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Representa cómo la tasa instantánea de crecimiento vegetal disminuye conforme la biomasa total se aproxima a la capacidad física del huerto (<span class="font-mono text-emerald-300">K = 50 kg</span>). Condición Inicial: <span class="font-mono text-emerald-300">y(0) = 5 kg</span>.
+                        </p>
+                    </div>
+
+                    <!-- Analytical Solution Box -->
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-md border border-slate-700 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">Solución Analítica Exacta</span>
+                            <span class="text-[11px] bg-cyan-500/20 text-cyan-300 px-2.5 py-0.5 rounded-full border border-cyan-500/30">Separación de Variables</span>
+                        </div>
+                        <div id="katex-analitica-main" class="py-3 text-center"></div>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Obtenida analíticamente para calcular exactamente los errores absolutos y relativos porcentuales de las soluciones numéricas aproximadas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: SIMULADOR & GRÁFICA ==================== -->
+        <section id="tab-simulador" class="tab-content hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Controls Sidebar -->
+                <div class="lg:col-span-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-200/90 space-y-6 h-fit">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                            <i class="fa-solid fa-sliders text-emerald-600"></i>
+                            <span>Panel de Parámetros</span>
+                        </h3>
+                        <button onclick="resetDefaults()" class="text-xs text-emerald-600 hover:text-emerald-800 font-semibold underline">
+                            Restablecer
+                        </button>
+                    </div>
+
+                    <form id="sim-form" onsubmit="event.preventDefault(); runSimulation();" class="space-y-5">
+                        
+                        <!-- Input y0 -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="input-y0" class="text-xs font-bold text-slate-700 uppercase">Biomasa Inicial y(0) [kg]</label>
+                                <span id="val-y0" class="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">5.0</span>
+                            </div>
+                            <input type="range" id="input-y0" min="1" max="25" step="0.5" value="5" oninput="syncInputs('y0', this.value)" class="w-full accent-emerald-600 cursor-pointer">
+                            <input type="number" id="num-y0" min="0.1" max="45" step="0.5" value="5" onchange="syncInputs('y0', this.value)" class="mt-1.5 w-full text-xs font-mono p-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+
+                        <!-- Input r -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="input-r" class="text-xs font-bold text-slate-700 uppercase">Tasa de Crecimiento r [semana⁻¹]</label>
+                                <span id="val-r" class="font-mono text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">0.40</span>
+                            </div>
+                            <input type="range" id="input-r" min="0.05" max="1.5" step="0.05" value="0.4" oninput="syncInputs('r', this.value)" class="w-full accent-blue-600 cursor-pointer">
+                            <input type="number" id="num-r" min="0.01" max="2" step="0.05" value="0.4" onchange="syncInputs('r', this.value)" class="mt-1.5 w-full text-xs font-mono p-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+
+                        <!-- Input K -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="input-K" class="text-xs font-bold text-slate-700 uppercase">Capacidad de Carga K [kg]</label>
+                                <span id="val-K" class="font-mono text-xs font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">50.0</span>
+                            </div>
+                            <input type="range" id="input-K" min="20" max="150" step="5" value="50" oninput="syncInputs('K', this.value)" class="w-full accent-purple-600 cursor-pointer">
+                            <input type="number" id="num-K" min="10" max="500" step="5" value="50" onchange="syncInputs('K', this.value)" class="mt-1.5 w-full text-xs font-mono p-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        </div>
+
+                        <!-- Input Step Size h -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="select-h" class="text-xs font-bold text-slate-700 uppercase">Tamaño de Paso h [semanas]</label>
+                                <span id="val-h" class="font-mono text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">1.0</span>
+                            </div>
+                            <select id="select-h" onchange="updateStepFromSelect(this.value)" class="w-full text-xs font-mono p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-amber-500 focus:outline-none font-semibold text-slate-800">
+                                <option value="0.25">h = 0.25 semanas (Fino)</option>
+                                <option value="0.5">h = 0.50 semanas (Medio)</option>
+                                <option value="1.0" selected>h = 1.00 semana (Estándar)</option>
+                                <option value="2.0">h = 2.00 semanas (Grueso)</option>
+                            </select>
+                        </div>
+
+                        <!-- Input tMax -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="input-tMax" class="text-xs font-bold text-slate-700 uppercase">Tiempo Total t [semanas]</label>
+                                <span id="val-tMax" class="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">12</span>
+                            </div>
+                            <input type="range" id="input-tMax" min="4" max="25" step="1" value="12" oninput="syncInputs('tMax', this.value)" class="w-full accent-slate-600 cursor-pointer">
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-brand-700 hover:from-emerald-700 hover:to-brand-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Ejecutar Simulación</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Simulation Charts and KPIs -->
+                <div class="lg:col-span-8 space-y-6">
+                    
+                    <!-- KPI Cards Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col justify-between border-l-4 border-l-amber-500">
+                            <div class="text-xs font-bold uppercase text-slate-500">Max Error Abs. Heun (RK2)</div>
+                            <div class="mt-2">
+                                <span id="kpi-err-heun" class="text-2xl font-extrabold font-mono text-slate-900">0.0000</span>
+                                <span id="kpi-rel-heun" class="block text-xs font-mono text-slate-400">0.00% rel.</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/90 flex flex-col justify-between border-l-4 border-l-blue-500">
+                            <div class="text-xs font-bold uppercase text-slate-500">Max Error Abs. RK4</div>
+                            <div class="mt-2">
+                                <span id="kpi-err-rk4" class="text-2xl font-extrabold font-mono text-slate-900">0.0000</span>
+                                <span id="kpi-rel-rk4" class="block text-xs font-mono text-slate-400">0.00% rel.</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-emerald-50 to-white p-5 rounded-2xl shadow-sm border border-emerald-200 flex flex-col justify-between border-l-4 border-l-emerald-600">
+                            <div class="text-xs font-bold uppercase text-emerald-800">Método Más Preciso</div>
+                            <div class="mt-2">
+                                <span id="kpi-best-method" class="text-lg font-black text-emerald-700">RK4 (Orden 4)</span>
+                                <span class="block text-[11px] text-emerald-600">Menor error acumulado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Box -->
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/90 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                            <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                                <i class="fa-solid fa-chart-area text-emerald-600"></i>
+                                <span>Curva de Biomasa y(t) vs Tiempo t</span>
+                            </h3>
+                            <div class="flex items-center space-x-2 text-xs">
+                                <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">Analítica</span>
+                                <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">Heun</span>
+                                <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold">RK4</span>
+                            </div>
+                        </div>
+                        <div class="relative h-72 sm:h-80 w-full">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Iteration Table Box -->
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/90 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                                    <i class="fa-solid fa-table text-emerald-600"></i>
+                                    <span>Tabla Comparativa por Pasos</span>
+                                </h3>
+                                <p class="text-xs text-slate-500">Resultados calculados y errores absolutos/relativos en cada iteración.</p>
+                            </div>
+                            <button onclick="exportCSV()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors flex items-center space-x-2 w-fit">
+                                <i class="fa-solid fa-file-csv text-emerald-600"></i>
+                                <span>Exportar a CSV</span>
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-2xl">
+                            <table class="w-full text-xs text-left font-mono">
+                                <thead class="bg-slate-100 text-slate-700 uppercase font-sans border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3 text-center">Paso (i)</th>
+                                        <th class="p-3">t (sem)</th>
+                                        <th class="p-3 text-emerald-700">Analítica (kg)</th>
+                                        <th class="p-3 text-amber-700">Heun (kg)</th>
+                                        <th class="p-3 text-amber-800">Err. Abs Heun</th>
+                                        <th class="p-3 text-blue-700">RK4 (kg)</th>
+                                        <th class="p-3 text-blue-800">Err. Abs RK4</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-results-body" class="divide-y divide-slate-100 bg-white">
+                                    <!-- Dynamic rows populate here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: DESGLOSE PASO A PASO ==================== -->
+        <section id="tab-paso-a-paso" class="tab-content hidden space-y-8">
+            <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/90 space-y-6">
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 flex items-center space-x-2">
+                            <i class="fa-solid fa-calculator text-emerald-600"></i>
+                            <span>Desglose Matemático de Fórmulas por Paso</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Sustitución numérica real renderizada con KaTeX para cualquier iteración seleccionada.</p>
+                    </div>
+
+                    <!-- Step Dropdown Selector -->
+                    <div class="flex items-center space-x-3">
+                        <label for="select-step-inspector" class="text-xs font-bold text-slate-700 whitespace-nowrap uppercase">Seleccionar Iteración:</label>
+                        <select id="select-step-inspector" onchange="renderStepDetails(parseInt(this.value))" class="text-xs font-mono font-bold p-2.5 border border-emerald-300 rounded-xl bg-emerald-50 text-emerald-950 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <!-- Options populate dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step Summary Banner -->
+                <div id="step-context-banner" class="p-4 bg-slate-900 text-white rounded-2xl flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Side by Side Formulas Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- HEUN METHOD (RK2) -->
+                    <div class="border border-amber-200 bg-amber-50/20 rounded-3xl p-6 space-y-5">
+                        <div class="flex items-center justify-between border-b border-amber-200/80 pb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="w-8 h-8 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center text-xs shadow-md">RK2</span>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-900">Método de Heun (RK2)</h3>
+                                    <p class="text-xs text-amber-800">Predictor (Euler) y Corrector (Promedio de Pendientes)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white p-4 rounded-2xl border border-amber-200/70 shadow-sm space-y-1">
+                                <div class="text-xs font-bold text-amber-900 uppercase">1. Pendiente Inicial (k₁)</div>
+                                <div id="katex-heun-k1" class="text-xs py-1"></div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-2xl border border-amber-200/70 shadow-sm space-y-1">
+                                <div class="text-xs font-bold text-amber-900 uppercase">2. Valor Predictor (y_pred)</div>
+                                <div id="katex-heun-pred" class="text-xs py-1"></div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-2xl border border-amber-200/70 shadow-sm space-y-1">
+                                <div class="text-xs font-bold text-amber-900 uppercase">3. Pendiente Final (k₂)</div>
+                                <div id="katex-heun-k2" class="text-xs py-1"></div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-amber-50 to-white p-4 rounded-2xl border border-amber-300 shadow-sm space-y-1">
+                                <div class="text-xs font-bold text-amber-900 uppercase">4. Valor Corrector Final</div>
+                                <div id="katex-heun-res" class="text-xs py-1"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RUNGE-KUTTA 4 (RK4) -->
+                    <div class="border border-blue-200 bg-blue-50/20 rounded-3xl p-6 space-y-5">
+                        <div class="flex items-center justify-between border-b border-blue-200/80 pb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="w-8 h-8 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow-md">RK4</span>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-900">Runge-Kutta 4.° Orden (RK4)</h3>
+                                    <p class="text-xs text-blue-800">Cuatro evaluaciones de pendiente ponderadas</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="bg-white p-3.5 rounded-2xl border border-blue-200/70 shadow-sm">
+                                    <div class="text-[11px] font-bold text-blue-900 uppercase mb-1">Pendiente k₁</div>
+                                    <div id="katex-rk4-k1"></div>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-2xl border border-blue-200/70 shadow-sm">
+                                    <div class="text-[11px] font-bold text-blue-900 uppercase mb-1">Pendiente k₂</div>
+                                    <div id="katex-rk4-k2"></div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="bg-white p-3.5 rounded-2xl border border-blue-200/70 shadow-sm">
+                                    <div class="text-[11px] font-bold text-blue-900 uppercase mb-1">Pendiente k₃</div>
+                                    <div id="katex-rk4-k3"></div>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-2xl border border-blue-200/70 shadow-sm">
+                                    <div class="text-[11px] font-bold text-blue-900 uppercase mb-1">Pendiente k₄</div>
+                                    <div id="katex-rk4-k4"></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-blue-50 to-white p-4 rounded-2xl border border-blue-300 shadow-sm space-y-1">
+                                <div class="text-xs font-bold text-blue-900 uppercase">Resultado RK4 Actualizado</div>
+                                <div id="katex-rk4-res" class="text-xs py-1"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Guion para Video de 1 Minuto -->
+    <div id="video-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white max-w-2xl w-full rounded-3xl shadow-2xl border border-slate-200 overflow-hidden space-y-0">
+            <div class="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 p-6 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-slate-950 text-amber-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-video"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black tracking-tight">Vídeo Explicativo</h3>
+                        <p class="text-xs font-semibold text-amber-950">Exposicion de la App Web y el problema a resolver</p>
+                    </div>
+                </div>
+                <button onclick="toggleVideoGuideModal()" class="text-slate-950 hover:text-white text-xl font-bold">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs sm:text-sm text-slate-700 leading-relaxed">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                    <div class="font-bold text-emerald-800 uppercase text-[11px]">Enlace del vídeo en YouTube</div>
+                    <a href="https://youtu.be/V2g98QL1M2U"> https://youtu.be/V2g98QL1M2U </a>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                    <a href="https://youtu.be/V2g98QL1M2U" class="font-bold text-blue-800 uppercase text-[11px]"> O presiona Aquí para verlo </a>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 border-t border-slate-200 text-right">
+                <button onclick="toggleVideoGuideModal()" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition-colors">
+                    Entendido, ¡Excelente vídeo!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs border-t border-slate-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-semibold text-slate-300">Desafío Individual • Métodos Numéricos 2026</p>
+            <p class="text-slate-500 mt-1">Ecuaciones Diferenciales Ordinarias: Métodos de Heun y Runge-Kutta 4 (RK4)</p>
+            <p class="font-bold"> Universitario: Cristian Alexander Quispe Espinal </p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Global State & Data Store
+        let simResults = [];
+        let mainChartInstance = null;
+
+        let params = {
+            y0: 5.0,
+            r: 0.40,
+            K: 50.0,
+            h: 1.0,
+            tMax: 12
+        };
+
+        // Mathematical EDO Rate Function: dy/dt = f(t, y)
+        function f(t, y, r, K) {
+            return r * y * (1 - (y / K));
+        }
+
+        // Exact Analytical Solution: y(t)
+        function exactAnalytical(t, y0, r, K) {
+            return (K * y0) / (y0 + (K - y0) * Math.exp(-r * t));
+        }
+
+        // KaTeX Helper for Rendering Equations cleanly
+        function renderKaTeX(elementId, mathExpression) {
+            const container = document.getElementById(elementId);
+            if (container) {
+                katex.render(mathExpression, container, {
+                    throwOnError: false,
+                    displayMode: true
+                });
+            }
+        }
+
+        // Navigation Tabs Controller
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-700', 'text-white', 'shadow-inner');
+                btn.classList.add('text-slate-300');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-emerald-700', 'text-white', 'shadow-inner');
+                activeBtn.classList.remove('text-slate-300');
+            }
+
+            if (tabId === 'paso-a-paso') {
+                populateStepInspectorSelect();
+                renderStepDetails(0);
+            }
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function toggleVideoGuideModal() {
+            document.getElementById('video-modal').classList.toggle('hidden');
+        }
+
+        // Synchronize Range Sliders and Inputs
+        function syncInputs(key, val) {
+            val = parseFloat(val);
+            params[key] = val;
+            
+            const rangeElem = document.getElementById(`input-${key}`);
+            const numElem = document.getElementById(`num-${key}`);
+            const valElem = document.getElementById(`val-${key}`);
+
+            if (rangeElem) rangeElem.value = val;
+            if (numElem) numElem.value = val;
+            if (valElem) valElem.textContent = (key === 'r') ? val.toFixed(2) : val.toFixed(1);
+
+            runSimulation();
+        }
+
+        function updateStepFromSelect(val) {
+            params.h = parseFloat(val);
+            document.getElementById('val-h').textContent = params.h.toFixed(2);
+            runSimulation();
+        }
+
+        function resetDefaults() {
+            params = { y0: 5.0, r: 0.40, K: 50.0, h: 1.0, tMax: 12 };
+            document.getElementById('input-y0').value = 5;
+            document.getElementById('num-y0').value = 5;
+            document.getElementById('val-y0').textContent = '5.0';
+
+            document.getElementById('input-r').value = 0.4;
+            document.getElementById('num-r').value = 0.4;
+            document.getElementById('val-r').textContent = '0.40';
+
+            document.getElementById('input-K').value = 50;
+            document.getElementById('num-K').value = 50;
+            document.getElementById('val-K').textContent = '50.0';
+
+            document.getElementById('select-h').value = "1.0";
+            document.getElementById('val-h').textContent = '1.0';
+
+            document.getElementById('input-tMax').value = 12;
+            document.getElementById('val-tMax').textContent = '12';
+
+            runSimulation();
+        }
+
+        // Core Numerical Simulation Engine
+        function runSimulation() {
+            const { y0, r, K, h, tMax } = params;
+            simResults = [];
+
+            let t = 0;
+            let yHeun = y0;
+            let yRK4 = y0;
+            let step = 0;
+
+            let maxErrHeun = 0;
+            let maxErrRK4 = 0;
+            let maxRelHeun = 0;
+            let maxRelRK4 = 0;
+
+            while (t <= tMax + 1e-5) {
+                const yExact = exactAnalytical(t, y0, r, K);
+
+                const errAbsHeun = Math.abs(yExact - yHeun);
+                const errRelHeun = yExact !== 0 ? (errAbsHeun / yExact) * 100 : 0;
+
+                const errAbsRK4 = Math.abs(yExact - yRK4);
+                const errRelRK4 = yExact !== 0 ? (errAbsRK4 / yExact) * 100 : 0;
+
+                if (errAbsHeun > maxErrHeun) maxErrHeun = errAbsHeun;
+                if (errRelHeun > maxRelHeun) maxRelHeun = errRelHeun;
+
+                if (errAbsRK4 > maxErrRK4) maxErrRK4 = errAbsRK4;
+                if (errRelRK4 > maxRelRK4) maxRelRK4 = errRelRK4;
+
+                // --- HEUN METHOD CALCULATIONS ---
+                const k1_heun = f(t, yHeun, r, K);
+                const yPred_heun = yHeun + h * k1_heun;
+                const k2_heun = f(t + h, yPred_heun, r, K);
+                const nextYHeun = yHeun + (h / 2) * (k1_heun + k2_heun);
+
+                // --- RUNGE-KUTTA 4 CALCULATIONS ---
+                const k1_rk4 = f(t, yRK4, r, K);
+                const k2_rk4 = f(t + h / 2, yRK4 + (h / 2) * k1_rk4, r, K);
+                const k3_rk4 = f(t + h / 2, yRK4 + (h / 2) * k2_rk4, r, K);
+                const k4_rk4 = f(t + h, yRK4 + h * k3_rk4, r, K);
+                const nextYRK4 = yRK4 + (h / 6) * (k1_rk4 + 2 * k2_rk4 + 2 * k3_rk4 + k4_rk4);
+
+                // Save Iteration Snapshot
+                simResults.push({
+                    step,
+                    t,
+                    yExact,
+                    yHeun,
+                    errAbsHeun,
+                    errRelHeun,
+                    heunDetails: { k1: k1_heun, yPred: yPred_heun, k2: k2_heun, nextY: nextYHeun },
+                    yRK4,
+                    errAbsRK4,
+                    errRelRK4,
+                    rk4Details: { k1: k1_rk4, k2: k2_rk4, k3: k3_rk4, k4: k4_rk4, nextY: nextYRK4 }
+                });
+
+                yHeun = nextYHeun;
+                yRK4 = nextYRK4;
+                t += h;
+                step++;
+            }
+
+            // Update Dashboard Metrics
+            document.getElementById('kpi-err-heun').textContent = maxErrHeun.toFixed(4);
+            document.getElementById('kpi-rel-heun').textContent = `${maxRelHeun.toFixed(2)}% err. rel máx`;
+
+            document.getElementById('kpi-err-rk4').textContent = maxErrRK4.toFixed(4);
+            document.getElementById('kpi-rel-rk4').textContent = `${maxRelRK4.toFixed(2)}% err. rel máx`;
+
+            const bestElem = document.getElementById('kpi-best-method');
+            if (maxErrRK4 < maxErrHeun) {
+                bestElem.textContent = 'RK4 (Orden 4)';
+                bestElem.className = 'text-lg font-black text-blue-700';
+            } else {
+                bestElem.textContent = 'Heun (RK2)';
+                bestElem.className = 'text-lg font-black text-amber-700';
+            }
+
+            renderChart();
+            renderTable();
+        }
+
+        // Render Chart.js Graph
+        function renderChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            const labels = simResults.map(r => `t=${r.t.toFixed(2)}`);
+            const dataExact = simResults.map(r => r.yExact);
+            const dataHeun = simResults.map(r => r.yHeun);
+            const dataRK4 = simResults.map(r => r.yRK4);
+
+            if (mainChartInstance) mainChartInstance.destroy();
+
+            mainChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Solución Analítica (Exacta)',
+                            data: dataExact,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.06)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#10b981',
+                            fill: true,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Método de Heun (RK2)',
+                            data: dataHeun,
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            pointRadius: 4,
+                            pointBackgroundColor: '#f59e0b',
+                            fill: false,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Runge-Kutta 4 (RK4)',
+                            data: dataRK4,
+                            borderColor: '#2563eb',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointStyle: 'rectRot',
+                            pointBackgroundColor: '#2563eb',
+                            fill: false,
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            padding: 10,
+                            bodyFont: { family: 'JetBrains Mono', size: 12 },
+                            callbacks: {
+                                label: (context) => ` ${context.dataset.label}: ${context.parsed.y.toFixed(4)} kg`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Tiempo t (semanas)', font: { weight: 'bold' } } },
+                        y: { title: { display: true, text: 'Biomasa y (kg)', font: { weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+
+        // Render Results Table
+        function renderTable() {
+            const tbody = document.getElementById('table-results-body');
+            tbody.innerHTML = '';
+
+            simResults.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold text-slate-400">${r.step}</td>
+                    <td class="p-3 font-semibold text-slate-800">${r.t.toFixed(2)}</td>
+                    <td class="p-3 text-emerald-700 font-bold">${r.yExact.toFixed(4)}</td>
+                    <td class="p-3 text-amber-700 font-semibold">${r.yHeun.toFixed(4)}</td>
+                    <td class="p-3 text-amber-800">${r.errAbsHeun.toFixed(4)}</td>
+                    <td class="p-3 text-blue-700 font-semibold">${r.yRK4.toFixed(4)}</td>
+                    <td class="p-3 text-blue-800">${r.errAbsRK4.toFixed(4)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Export Simulation Results to CSV File
+        function exportCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Paso,Tiempo_t_semanas,Analitica_kg,Heun_kg,ErrAbs_Heun,RK4_kg,ErrAbs_RK4\n";
+
+            simResults.forEach(r => {
+                csvContent += `${r.step},${r.t.toFixed(4)},${r.yExact.toFixed(4)},${r.yHeun.toFixed(4)},${r.errAbsHeun.toFixed(4)},${r.yRK4.toFixed(4)},${r.errAbsRK4.toFixed(4)}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `simulacion_huerto_edo_h${params.h}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function populateStepInspectorSelect() {
+            const select = document.getElementById('select-step-inspector');
+            select.innerHTML = '';
+            for (let i = 0; i < simResults.length - 1; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `Paso ${i} → ${i+1} (t = ${simResults[i].t.toFixed(2)} a ${simResults[i+1].t.toFixed(2)} sem)`;
+                select.appendChild(opt);
+            }
+        }
+
+        // Render Step Formulas and Real Numerical Substitutions using KaTeX
+        function renderStepDetails(stepIdx) {
+            if (simResults.length <= stepIdx) return;
+            const current = simResults[stepIdx];
+            const { r, K, h } = params;
+
+            // Render Banner Info
+            const banner = document.getElementById('step-context-banner');
+            banner.innerHTML = `
+                <div><span class="text-slate-400">PASO ACTUAL:</span> i = ${current.step}</div>
+                <div><span class="text-slate-400">TIEMPO:</span> t = ${current.t.toFixed(2)} sem</div>
+                <div><span class="text-slate-400">PASO h:</span> ${h} sem</div>
+                <div><span class="text-slate-400">PARÁMETROS:</span> r = ${r}, K = ${K} kg</div>
+            `;
+
+            // HEUN METHOD KATEX RENDERING
+            const hd = current.heunDetails;
+            renderKaTeX('katex-heun-k1', `k_1 = ${r} \\cdot ${current.yHeun.toFixed(4)} \\cdot \\left(1 - \\frac{${current.yHeun.toFixed(4)}}{${K}}\\right) = \\mathbf{${hd.k1.toFixed(5)}}`);
+            renderKaTeX('katex-heun-pred', `\\hat{y}_{i+1} = ${current.yHeun.toFixed(4)} + (${h}) \\cdot (${hd.k1.toFixed(5)}) = \\mathbf{${hd.yPred.toFixed(4)}\\text{ kg}}`);
+            renderKaTeX('katex-heun-k2', `k_2 = ${r} \\cdot ${hd.yPred.toFixed(4)} \\cdot \\left(1 - \\frac{${hd.yPred.toFixed(4)}}{${K}}\\right) = \\mathbf{${hd.k2.toFixed(5)}}`);
+            renderKaTeX('katex-heun-res', `y_{i+1} = ${current.yHeun.toFixed(4)} + \\frac{${h}}{2}(${hd.k1.toFixed(5)} + ${hd.k2.toFixed(5)}) = \\mathbf{${hd.nextY.toFixed(4)}\\text{ kg}}`);
+
+            // RK4 METHOD KATEX RENDERING
+            const rkd = current.rk4Details;
+            renderKaTeX('katex-rk4-k1', `k_1 = \\mathbf{${rkd.k1.toFixed(5)}}`);
+            renderKaTeX('katex-rk4-k2', `k_2 = \\mathbf{${rkd.k2.toFixed(5)}}`);
+            renderKaTeX('katex-rk4-k3', `k_3 = \\mathbf{${rkd.k3.toFixed(5)}}`);
+            renderKaTeX('katex-rk4-k4', `k_4 = \\mathbf{${rkd.k4.toFixed(5)}}`);
+            renderKaTeX('katex-rk4-res', `y_{i+1} = ${current.yRK4.toFixed(4)} + \\frac{${h}}{6}\\left[${rkd.k1.toFixed(5)} + 2(${rkd.k2.toFixed(5)}) + 2(${rkd.k3.toFixed(5)}) + ${rkd.k4.toFixed(5)}\\right] = \\mathbf{${rkd.nextY.toFixed(4)}\\text{ kg}}`);
+        }
+
+        // Initialize Main Formulas on Load
+        window.onload = function() {
+            renderKaTeX('katex-edo-main', '\\frac{dy}{dt} = r \\cdot y \\left(1 - \\frac{y}{K}\\right)');
+            renderKaTeX('katex-analitica-main', 'y(t) = \\frac{K \\cdot y_0}{y_0 + (K - y_0) \\cdot e^{-r \\cdot t}}');
+            
+            runSimulation();
+            switchTab('contexto');
+        };
+    </script>
+</body>
+</html>
